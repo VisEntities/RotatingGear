@@ -15,7 +15,7 @@ using UnityEngine;
 namespace Oxide.Plugins
 {
     [Info("Rotating Gear", "VisEntities", "1.0.0")]
-    [Description(" ")]
+    [Description("Equips players with a random loadout at set intervals.")]
     public class RotatingGear : RustPlugin
     {
         #region 3rd Party Dependencies
@@ -149,8 +149,8 @@ namespace Oxide.Plugins
                         gearSetToEquip = _config.GearSets[_currentGearIndex];
                     }
 
-                    EquipGearSet(player, gearSetToEquip, clearInventory: true);
-                    ShowToast(player, Lang.GearRotated, GameTip.Styles.Blue_Normal, gearSetToEquip);
+                    if (EquipGearSet(player, gearSetToEquip, clearInventory: true))
+                        MessagePlayer(player, Lang.GearRotated, gearSetToEquip);
                 }
 
                 yield return null;
@@ -166,7 +166,7 @@ namespace Oxide.Plugins
 
         #region Gear Set Equipping
 
-        public static bool GearSetExists(string gearSetName)
+        private bool GearSetExists(string gearSetName)
         {
             if (!PluginLoaded(_plugin.GearCore))
                 return false;
@@ -174,7 +174,7 @@ namespace Oxide.Plugins
             return _plugin.GearCore.Call<bool>("GearSetExists", gearSetName);
         }
 
-        public static bool EquipGearSet(BasePlayer player, string gearSetName, bool clearInventory = true)
+        private bool EquipGearSet(BasePlayer player, string gearSetName, bool clearInventory = true)
         {
             if (!PluginLoaded(_plugin.GearCore))
                 return false;
@@ -201,7 +201,7 @@ namespace Oxide.Plugins
             return true;
         }
 
-        public static bool PluginLoaded(Plugin plugin)
+        private static bool PluginLoaded(Plugin plugin)
         {
             if (plugin != null && plugin.IsLoaded)
                 return true;
@@ -303,12 +303,6 @@ namespace Oxide.Plugins
         {
             string message = GetMessage(player, messageKey, args);
             _plugin.SendReply(player, message);
-        }
-
-        public static void ShowToast(BasePlayer player, string messageKey, GameTip.Styles style = GameTip.Styles.Blue_Normal, params object[] args)
-        {
-            string message = GetMessage(player, messageKey, args);
-            player.SendConsoleCommand("gametip.showtoast", (int)style, message);
         }
 
         #endregion Localization
