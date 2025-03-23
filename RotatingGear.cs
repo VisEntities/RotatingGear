@@ -14,7 +14,7 @@ using UnityEngine;
 
 namespace Oxide.Plugins
 {
-    [Info("Rotating Gear", "VisEntities", "1.0.0")]
+    [Info("Rotating Gear", "VisEntities", "1.0.1")]
     [Description("Equips players with a random loadout at set intervals.")]
     public class RotatingGear : RustPlugin
     {
@@ -128,6 +128,19 @@ namespace Oxide.Plugins
             });
         }
 
+        private void OnPlayerRespawned(BasePlayer player)
+        {
+            if (PermissionUtil.HasPermission(player, PermissionUtil.IGNORE))
+                return;
+
+            string gearSetName = _config.GearSets[_currentGearIndex];
+
+            if (EquipGearSet(player, gearSetName, clearInventory: true))
+            {
+                MessagePlayer(player, Lang.GearRotated, gearSetName);
+            }
+        }
+
         #endregion Oxide Hooks
 
         #region Gear Rotation
@@ -217,16 +230,31 @@ namespace Oxide.Plugins
         {
             private static readonly Dictionary<string, Coroutine> _activeCoroutines = new Dictionary<string, Coroutine>();
 
-            public static void StartCoroutine(string coroutineName, IEnumerator coroutineFunction)
+            public static Coroutine StartCoroutine(string baseCoroutineName, IEnumerator coroutineFunction, string uniqueSuffix = null)
             {
+                string coroutineName;
+
+                if (uniqueSuffix != null)
+                    coroutineName = baseCoroutineName + "_" + uniqueSuffix;
+                else
+                    coroutineName = baseCoroutineName;
+
                 StopCoroutine(coroutineName);
 
                 Coroutine coroutine = ServerMgr.Instance.StartCoroutine(coroutineFunction);
                 _activeCoroutines[coroutineName] = coroutine;
+                return coroutine;
             }
 
-            public static void StopCoroutine(string coroutineName)
+            public static void StopCoroutine(string baseCoroutineName, string uniqueSuffix = null)
             {
+                string coroutineName;
+
+                if (uniqueSuffix != null)
+                    coroutineName = baseCoroutineName + "_" + uniqueSuffix;
+                else
+                    coroutineName = baseCoroutineName;
+
                 if (_activeCoroutines.TryGetValue(coroutineName, out Coroutine coroutine))
                 {
                     if (coroutine != null)
@@ -284,7 +312,7 @@ namespace Oxide.Plugins
         {
             lang.RegisterMessages(new Dictionary<string, string>
             {
-                [Lang.GearRotated] = "New gear rotation! You have been switched to <color=#CACF52>{0}</color>.",
+                [Lang.GearRotated] = "New gear rotation! Gear set '{0}' has been given to you.",
 
             }, this, "en");
         }
